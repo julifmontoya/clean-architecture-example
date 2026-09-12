@@ -8,6 +8,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("v1/", include("modules.catalog.presentation.urls")),
     path("v1/", include("modules.inventory.presentation.urls")),
+    path("v1/", include("modules.featured_tours.presentation.urls")),
 ]
 
 urlpatterns += [

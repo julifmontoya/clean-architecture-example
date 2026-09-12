@@ -1,10 +1,10 @@
 from rest_framework.test import APITestCase
 
 from modules.catalog.models import Category, Tour
-from modules.inventory.models import TourAvailability, TourRate
+from modules.inventory.models import TourRate
 
 
-class TourAvailabilityTests(APITestCase):
+class TourRateTests(APITestCase):
     def setUp(self):
         category = Category.objects.create(title="Adventure")
         self.tour = Tour.objects.create(
@@ -15,60 +15,92 @@ class TourAvailabilityTests(APITestCase):
             category=category,
         )
 
-    def _payload(self, date, allotment, price_adult, price_child, price_infant):
+    def _payload(self, price_adult, price_child, price_infant):
         return {
-            "date": date,
-            "allotment": allotment,
-            "rate": {
-                "price_adult": price_adult,
-                "price_child": price_child,
-                "price_infant": price_infant,
-            },
+            "price_adult": price_adult,
+            "price_child": price_child,
+            "price_infant": price_infant,
         }
 
-    def test_create_multiple_availabilities_each_with_its_own_rate(self):
-        response_1 = self.client.post(
-            f"/v1/tours/{self.tour.id}/availabilities/",
-            self._payload("2026-08-20", 10, "100000", "80000", "20000"),
+    def test_set_rate_creates_it(self):
+        response = self.client.put(
+            f"/v1/tours/{self.tour.id}/rate/",
+            self._payload("100000", "80000", "20000"),
             format="json",
         )
-        response_2 = self.client.post(
-            f"/v1/tours/{self.tour.id}/availabilities/",
-            self._payload("2026-08-21", 8, "110000", "85000", "20000"),
-            format="json",
-        )
-
-        self.assertEqual(response_1.status_code, 201)
-        self.assertEqual(response_2.status_code, 201)
-
-        self.assertEqual(self.tour.availabilities.count(), 2)
-        self.assertEqual(TourRate.objects.count(), 2)
-
-        first = TourAvailability.objects.get(date="2026-08-20")
-        self.assertEqual(first.allotment, 10)
-        self.assertEqual(str(first.rate.price_adult), "100000.00")
-        self.assertEqual(str(first.rate.price_child), "80000.00")
-        self.assertEqual(str(first.rate.price_infant), "20000.00")
-
-    def test_list_availabilities_includes_rate(self):
-        self.client.post(
-            f"/v1/tours/{self.tour.id}/availabilities/",
-            self._payload("2026-08-20", 10, "100000", "80000", "20000"),
-            format="json",
-        )
-
-        response = self.client.get(f"/v1/tours/{self.tour.id}/availabilities/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["allotment"], 10)
-        self.assertEqual(response.data[0]["rate"]["price_adult"], "100000.00")
+        self.assertEqual(response.data["price_adult"], "100000.00")
+        self.assertEqual(response.data["price_child"], "80000.00")
+        self.assertEqual(response.data["price_infant"], "20000.00")
 
-    def test_create_availability_requires_existing_tour(self):
-        response = self.client.post(
-            "/v1/tours/999999/availabilities/",
-            self._payload("2026-08-20", 10, "100000", "80000", "20000"),
+        self.assertEqual(TourRate.objects.count(), 1)
+        rate = TourRate.objects.get(tour=self.tour)
+        self.assertEqual(str(rate.price_adult), "100000.00")
+
+    def test_set_rate_updates_existing_rate_instead_of_duplicating(self):
+        self.client.put(
+            f"/v1/tours/{self.tour.id}/rate/",
+            self._payload("100000", "80000", "20000"),
+            format="json",
+        )
+
+        response = self.client.put(
+            f"/v1/tours/{self.tour.id}/rate/",
+            self._payload("110000", "85000", "25000"),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(TourRate.objects.count(), 1)
+        rate = TourRate.objects.get(tour=self.tour)
+        self.assertEqual(str(rate.price_adult), "110000.00")
+
+    def test_get_rate_returns_the_current_rate(self):
+        self.client.put(
+            f"/v1/tours/{self.tour.id}/rate/",
+            self._payload("100000", "80000", "20000"),
+            format="json",
+        )
+
+        response = self.client.get(f"/v1/tours/{self.tour.id}/rate/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["price_adult"], "100000.00")
+
+    def test_get_rate_returns_404_when_tour_has_no_rate(self):
+        response = self.client.get(f"/v1/tours/{self.tour.id}/rate/")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_set_rate_requires_existing_tour(self):
+        response = self.client.put(
+            "/v1/tours/999999/rate/",
+            self._payload("100000", "80000", "20000"),
             format="json",
         )
 
         self.assertEqual(response.status_code, 400)
+
+    def test_tour_detail_includes_prices_from_rate(self):
+        TourRate.objects.create(
+            tour=self.tour,
+            price_adult="100000",
+            price_child="80000",
+            price_infant="20000",
+        )
+
+        response = self.client.get(f"/v1/tours/{self.tour.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["min_price_adult"], "100000.00")
+        self.assertEqual(response.data["price_child"], "80000.00")
+        self.assertEqual(response.data["price_infant"], "20000.00")
+
+    def test_tour_detail_without_rate_has_null_prices(self):
+        response = self.client.get(f"/v1/tours/{self.tour.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.data["min_price_adult"])
+        self.assertIsNone(response.data["price_child"])
+        self.assertIsNone(response.data["price_infant"])

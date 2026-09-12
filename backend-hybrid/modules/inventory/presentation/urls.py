@@ -1,11 +1,11 @@
 from django.urls import path
 
-from modules.inventory.presentation.views.availability_views import TourAvailabilityListCreateAPIView
+from modules.inventory.presentation.views.rate_views import TourRateAPIView
 
 urlpatterns = [
     path(
-        "tours/<int:tour_id>/availabilities/",
-        TourAvailabilityListCreateAPIView.as_view(),
-        name="tour-availability-list-create",
+        "tours/<int:tour_id>/rate/",
+        TourRateAPIView.as_view(),
+        name="tour-rate-detail",
     ),
 ]

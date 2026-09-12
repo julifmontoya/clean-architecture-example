@@ -2,6 +2,8 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
+import FeaturedTours from "../components/FeaturedTours.vue";
+
 const router = useRouter();
 const search = ref("");
 
@@ -103,5 +105,7 @@ const handleSearch = () => {
                 </div>
             </div>
         </section>
+
+        <FeaturedTours />
     </main>
 </template>

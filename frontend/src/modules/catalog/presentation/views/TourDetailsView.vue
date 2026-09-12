@@ -2,6 +2,7 @@
 import { RouterLink } from "vue-router";
 
 import { useTourDetails } from "../composables/useTourDetails";
+import TourBookingCalculator from "../components/TourBookingCalculator.vue";
 
 const { tour, loading, error } = useTourDetails();
 </script>
@@ -84,28 +85,8 @@ const { tour, loading, error } = useTourDetails();
 
                     </div>
 
-                    <!-- Price -->
-                    <div
-                        class="min-w-52 rounded-xl bg-gray-900 p-6 text-white"
-                    >
-                        <p class="text-sm text-gray-400">
-                            Desde
-                        </p>
-
-                        <p class="mt-1 text-3xl font-bold">
-                            ${{ tour.min_price_adult }}
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-400">
-                            por adulto
-                        </p>
-
-                        <button
-                            class="mt-6 w-full rounded-lg bg-white px-4 py-3 font-semibold text-gray-900 transition hover:bg-gray-100"
-                        >
-                            Reservar ahora
-                        </button>
-                    </div>
+                    <!-- Booking calculator -->
+                    <TourBookingCalculator :tour="tour" />
                 </div>
             </section>
 

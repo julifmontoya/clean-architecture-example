@@ -4,16 +4,9 @@ from modules.catalog.models import Tour
 from modules.catalog.presentation.serializers.category_serializer import CategorySerializer
 
 
-class TourSerializer(serializers.ModelSerializer):
-    category_id = serializers.IntegerField(write_only=True)
+class FeaturedTourSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     min_price_adult = serializers.DecimalField(
-        max_digits=10, decimal_places=2, read_only=True, allow_null=True
-    )
-    price_child = serializers.DecimalField(
-        max_digits=10, decimal_places=2, read_only=True, allow_null=True
-    )
-    price_infant = serializers.DecimalField(
         max_digits=10, decimal_places=2, read_only=True, allow_null=True
     )
 
@@ -24,12 +17,7 @@ class TourSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "duration",
-            "itinerary_days",
-            "included_not_included",
             "category",
-            "category_id",
             "min_price_adult",
-            "price_child",
-            "price_infant",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = fields
