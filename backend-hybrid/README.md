@@ -744,3 +744,4 @@ Los tres campos (`price_adult`, `price_child`, `price_infant`) son obligatorios.
 
 - `400 Bad Request`: falta alguno de los tres campos de precio (validación de `TourRateSerializer`).
 - `400 Bad Request`: `tour_id` no corresponde a ningún tour existente (`SetTourRate` lanza `ValueError`, traducido por la vista a `ValidationError`).
+
